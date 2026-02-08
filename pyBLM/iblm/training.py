@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Any
 import xgboost as xgb
-from statsmodels.genmod import GLM
+import statsmodels.api as sm
 from statsmodels.genmod.families import Poisson, Gamma, Gaussian, Tweedie
 from statsmodels.genmod.families.links import Log, Identity
 from iblm.preprocessing import (
@@ -138,7 +138,7 @@ def train_iblm_xgb(
     # Create design matrix (convert categoricals to numeric)
     train_features_numeric = _prepare_features_for_glm(train_features)
     
-    glm_model = GLM(
+    glm_model = sm.GLM(
         train_response,
         train_features_numeric,
         family=glm_family
@@ -167,14 +167,15 @@ def train_iblm_xgb(
     print(f"Training XGBoost booster...")
     
     # Create DMatrix
+    # Use numeric-encoded features for XGBoost (no pandas categorical dtypes)
     dtrain = xgb.DMatrix(
-        train_features,
+        train_features_numeric,
         label=train_targets,
         feature_names=predictor_vars
     )
-    
+
     dvalidate = xgb.DMatrix(
-        validate_features,
+        train_features_numeric_val,
         label=validate_targets,
         feature_names=predictor_vars
     )

@@ -12,8 +12,8 @@ long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 setup(
     name="pyBLM",
     version="0.1.0",
-    author="Karol Gawlowski, Paul Beard",
-    author_email="your-email@example.com",
+    author="Zhuowen Zhou",
+    author_email="zhou.zhuowen@hotmail.com",
     description="Interpretable Boosted Linear Models - Combining GLMs with XGBoost for Interpretability",
     long_description=long_description,
     long_description_content_type="text/markdown",

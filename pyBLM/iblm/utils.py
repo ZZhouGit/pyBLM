@@ -8,96 +8,7 @@ from iblm.models import IBLMModel
 from typing import Tuple
 
 
-def calculate_mae(actual: np.ndarray, predicted: np.ndarray) -> float:
-    """Calculate Mean Absolute Error."""
-    return np.mean(np.abs(actual - predicted))
 
-
-def calculate_rmse(actual: np.ndarray, predicted: np.ndarray) -> float:
-    """Calculate Root Mean Squared Error."""
-    return np.sqrt(np.mean((actual - predicted) ** 2))
-
-
-def calculate_mape(actual: np.ndarray, predicted: np.ndarray) -> float:
-    """Calculate Mean Absolute Percentage Error."""
-    return np.mean(np.abs((actual - predicted) / actual)) * 100
-
-
-def calculate_pinball_scores(
-    actual: np.ndarray,
-    predicted: np.ndarray,
-    quantiles: Tuple[float, ...] = (0.25, 0.5, 0.75)
-) -> dict:
-    """
-    Calculate pinball losses for different quantiles.
-    
-    Parameters
-    ----------
-    actual : np.ndarray
-        Actual values.
-    predicted : np.ndarray
-        Predicted values.
-    quantiles : tuple, default=(0.25, 0.5, 0.75)
-        Quantiles for which to calculate pinball loss.
-    
-    Returns
-    -------
-    dict
-        Dictionary with quantile: pinball_loss pairs.
-    """
-    
-    scores = {}
-    for q in quantiles:
-        errors = actual - predicted
-        scores[q] = np.mean(np.maximum(q * errors, (q - 1) * errors))
-    
-    return scores
-
-
-def model_summary(
-    iblm_model: IBLMModel,
-    data_split: str = 'train'
-) -> dict:
-    """
-    Generate a summary of model performance metrics.
-    
-    Parameters
-    ----------
-    iblm_model : IBLMModel
-        Fitted IBLM model.
-    data_split : str, default='train'
-        Which data split to use.
-    
-    Returns
-    -------
-    dict
-        Dictionary with various performance metrics.
-    """
-    
-    if data_split not in iblm_model.data:
-        raise ValueError(f"Data split '{data_split}' not available")
-    
-    data = iblm_model.data[data_split]
-    actual = data['responses'].values
-    glm_preds = data['glm_preds']
-    
-    summary = {
-        'data_split': data_split,
-        'n_observations': len(actual),
-        'response_mean': np.mean(actual),
-        'response_std': np.std(actual),
-        'response_min': np.min(actual),
-        'response_max': np.max(actual),
-        'glm_mae': calculate_mae(actual, glm_preds),
-        'glm_rmse': calculate_rmse(actual, glm_preds),
-        'glm_mape': calculate_mape(actual, glm_preds),
-        'family': iblm_model.family,
-        'relationship': iblm_model.relationship,
-        'n_continuous_vars': len(iblm_model.predictor_vars['continuous']),
-        'n_categorical_vars': len(iblm_model.predictor_vars['categorical']),
-    }
-    
-    return summary
 
 
 def get_glm_coefficients(iblm_model: IBLMModel) -> pd.Series:
@@ -116,6 +27,42 @@ def get_glm_coefficients(iblm_model: IBLMModel) -> pd.Series:
     """
     
     return iblm_model.glm_model.params
+
+
+def calculate_pinball_scores(
+    actual: np.ndarray,
+    predicted: np.ndarray,
+    quantiles: Tuple[float, ...] = (0.25, 0.5, 0.75)
+) -> dict:
+    """
+    Calculate pinball losses for different quantiles.
+
+    Parameters
+    ----------
+    actual : np.ndarray
+        Actual values.
+    predicted : np.ndarray
+        Predicted values.
+    quantiles : tuple, default=(0.25, 0.5, 0.75)
+        Quantiles for which to calculate pinball loss.
+
+    Returns
+    -------
+    dict
+        Dictionary with quantile: pinball_loss pairs.
+    """
+    actual = np.asarray(actual, dtype=float)
+    predicted = np.asarray(predicted, dtype=float)
+
+    if actual.shape != predicted.shape:
+        raise ValueError("`actual` and `predicted` must have the same shape")
+
+    errors = actual - predicted
+    scores = {}
+    for q in quantiles:
+        scores[q] = float(np.mean(np.maximum(q * errors, (q - 1) * errors)))
+
+    return scores
 
 
 def get_residuals(

@@ -91,10 +91,15 @@ def check_required_names(data: dict, required_names: list) -> bool:
         If any required names are missing.
     """
     
-    if not isinstance(data, dict):
-        raise TypeError("Input must be a dictionary or dict-like object (e.g., DataFrame).")
-    
-    missing = set(required_names) - set(data.keys())
+    # Accept either a dict-like object or a pandas DataFrame
+    if isinstance(data, dict):
+        keys = set(data.keys())
+    elif isinstance(data, pd.DataFrame):
+        keys = set(data.columns)
+    else:
+        raise TypeError("Input must be a dictionary or pandas DataFrame.")
+
+    missing = set(required_names) - keys
     
     if missing:
         raise ValueError(f"Missing required names: {missing}")
@@ -232,7 +237,8 @@ def identify_variable_types(data: pd.DataFrame, response_var: str) -> Tuple[list
             categorical.append(col)
         elif pd.api.types.is_numeric_dtype(data[col]):
             # Check if it's actually categorical by number of unique values
-            if data[col].nunique() < 10:  # Heuristic: treat as categorical if few unique values
+            # Treat binary or near-binary numeric variables as categorical
+            if data[col].nunique() <= 2:
                 categorical.append(col)
             else:
                 continuous.append(col)

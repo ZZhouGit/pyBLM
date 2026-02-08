@@ -84,7 +84,7 @@ def predict(
             f"Must be 'multiplicative' or 'additive'."
         )
     
-    return predictions
+    return np.asarray(predictions)
 
 
 def _predict_glm(iblm_model: IBLMModel, newdata: pd.DataFrame, type: str = "response") -> np.ndarray:
@@ -101,10 +101,12 @@ def _predict_glm(iblm_model: IBLMModel, newdata: pd.DataFrame, type: str = "resp
 
 def _predict_booster(iblm_model: IBLMModel, newdata: pd.DataFrame, type: str = "response") -> np.ndarray:
     """Generate predictions from the booster component."""
-    
-    # Create DMatrix
-    dmatrix = xgb.DMatrix(newdata)
-    
+    # Prepare features (convert categoricals to numeric codes)
+    newdata_numeric = _prepare_features_for_prediction(newdata, iblm_model)
+
+    # Create DMatrix using numeric data
+    dmatrix = xgb.DMatrix(newdata_numeric)
+
     # Get booster predictions
     booster_preds = iblm_model.booster_model.predict(dmatrix)
     

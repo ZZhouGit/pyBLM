@@ -135,8 +135,16 @@ def extract_booster_shap(booster_model: xgb.Booster, data: pd.DataFrame) -> pd.D
     # Select only features in the booster
     data_features = data[feature_names].copy() if all(f in data.columns for f in feature_names) else data
     
-    # Create DMatrix
-    dmatrix = xgb.DMatrix(data_features, feature_names=feature_names)
+    # Convert categorical columns to numeric codes to match training encoding
+    data_features_numeric = data_features.copy()
+    for col in data_features_numeric.columns:
+        if pd.api.types.is_categorical_dtype(data_features_numeric[col]):
+            data_features_numeric[col] = data_features_numeric[col].cat.codes
+        elif data_features_numeric[col].dtype == 'object':
+            data_features_numeric[col] = pd.Categorical(data_features_numeric[col]).codes
+
+    # Create DMatrix from numeric data
+    dmatrix = xgb.DMatrix(data_features_numeric, feature_names=feature_names)
     
     # Get SHAP values
     shap_values = booster_model.predict(dmatrix, pred_contribs=True)
@@ -161,8 +169,9 @@ def extract_booster_shap(booster_model: xgb.Booster, data: pd.DataFrame) -> pd.D
 def data_to_onehot(data: pd.DataFrame, iblm_model: IBLMModel) -> pd.DataFrame:
     """Convert categorical variables to one-hot encoding."""
     
+    cols = iblm_model.predictor_vars['continuous'] + iblm_model.predictor_vars['categorical']
     data_onehot = pd.get_dummies(
-        data[iblm_model.predictor_vars['continuous']],
+        data[cols],
         columns=iblm_model.predictor_vars['categorical'],
         drop_first=False,
         prefix_sep='_'

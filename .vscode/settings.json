@@ -1,0 +1,6 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "D:/github/pyBLM/.venv/Scripts/python.exe": true,
+        "import": true
+    }
+}

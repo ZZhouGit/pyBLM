@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from iblm import (
-    load_fremtpl_mini,
+    load_freMTPL_mini,
     split_into_train_validate_test,
     train_iblm_xgb,
     predict,
@@ -19,19 +19,15 @@ from iblm.preprocessing import (
     identify_variable_types,
 )
 from iblm.utils import (
-    calculate_mae,
-    calculate_rmse,
-    calculate_mape,
     check_iblm_model,
 )
-
 
 class TestDataLoading:
     """Test data loading functions."""
     
     def test_load_fremtpl_mini(self):
         """Test loading the freMTPL mini dataset."""
-        df = load_fremtpl_mini()
+        df = load_freMTPL_mini()
         
         assert isinstance(df, pd.DataFrame)
         assert df.shape[0] > 0
@@ -40,7 +36,7 @@ class TestDataLoading:
     
     def test_fremtpl_data_types(self):
         """Test that freMTPL data has correct types."""
-        df = load_fremtpl_mini()
+        df = load_freMTPL_mini()
         
         # Check categorical columns
         assert pd.api.types.is_categorical_dtype(df['VehBrand'])
@@ -145,7 +141,7 @@ class TestTraining:
     @pytest.fixture
     def training_data(self):
         """Create sample training data."""
-        df = load_fremtpl_mini()
+        df = load_freMTPL_mini()
         return split_into_train_validate_test(df, seed=42)
     
     def test_train_iblm_xgb_poisson(self, training_data):
@@ -197,7 +193,7 @@ class TestPrediction:
     @pytest.fixture
     def trained_model(self):
         """Create a trained IBLM model."""
-        df = load_fremtpl_mini()
+        df = load_freMTPL_mini()
         split_data = split_into_train_validate_test(df, seed=42)
         model = train_iblm_xgb(
             split_data,
@@ -239,7 +235,7 @@ class TestExplanation:
     @pytest.fixture
     def trained_model_with_test(self):
         """Create a trained IBLM model with test set."""
-        df = load_fremtpl_mini()
+        df = load_freMTPL_mini()
         split_data = split_into_train_validate_test(df, seed=42)
         model = train_iblm_xgb(
             split_data,
@@ -267,34 +263,6 @@ class TestExplanation:
         shap_df = explainer['shap']
         assert isinstance(shap_df, pd.DataFrame)
         assert len(shap_df) == len(test_data)
-
-
-class TestMetrics:
-    """Test metric calculation functions."""
-    
-    def test_calculate_mae(self):
-        """Test MAE calculation."""
-        actual = np.array([1, 2, 3, 4])
-        predicted = np.array([1, 2, 3, 4])
-        
-        mae = calculate_mae(actual, predicted)
-        assert mae == 0
-    
-    def test_calculate_rmse(self):
-        """Test RMSE calculation."""
-        actual = np.array([1, 2, 3, 4])
-        predicted = np.array([1, 2, 3, 4])
-        
-        rmse = calculate_rmse(actual, predicted)
-        assert rmse == 0
-    
-    def test_calculate_mape(self):
-        """Test MAPE calculation."""
-        actual = np.array([1, 2, 3, 4])
-        predicted = np.array([1, 2, 3, 4])
-        
-        mape = calculate_mape(actual, predicted)
-        assert mape == 0
 
 
 if __name__ == "__main__":
